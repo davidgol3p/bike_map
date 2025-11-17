@@ -70,26 +70,34 @@ const stationFlow = d3.scaleQuantize()
     .range([0, 0.5, 1]);  // 3 discrete classes
 
     function updateScatter(stations) {
-        radiusScale.domain([0, d3.max(stations, d => d.totalTraffic)]);
-      
-        const circles = svg.selectAll("circle")
-          .data(stations, d => d.short_name);
-      
-        circles.enter()
-          .append("circle")
-          .attr("opacity", 0.85)
-          .merge(circles)
-          .attr("r", d => radiusScale(d.totalTraffic))
-          .attr("cx", d => project(d).x)
-          .attr("cy", d => project(d).y)
-          .style("--departure-ratio", d =>
-            d.totalTraffic > 0
-              ? stationFlow(d.departures / d.totalTraffic)
-              : 0.5
-          );
-      
-        circles.exit().remove();
-      }
+      radiusScale.domain([0, d3.max(stations, d => d.totalTraffic)]);
+    
+      const circles = svg.selectAll("circle")
+        .data(stations, d => d.short_name);
+    
+      circles.enter()
+        .append("circle")
+        .attr("opacity", 0.85)
+        .merge(circles)
+        .attr("r", d => radiusScale(d.totalTraffic))
+        .attr("cx", d => project(d).x)
+        .attr("cy", d => project(d).y)
+        .style("--departure-ratio", d =>
+          d.totalTraffic > 0 ? stationFlow(d.departures / d.totalTraffic) : 0.5
+        )
+        .each(function(d) {
+          // Remove previous tooltip if updating
+          d3.select(this).select("title").remove();
+    
+          // Append <title> for browser tooltip
+          d3.select(this)
+            .append("title")
+            .text(`${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals)`);
+        });
+    
+      circles.exit().remove();
+    }
+    
 
 function project(station) {
   return map.project([station.lon, station.lat]);
@@ -100,7 +108,6 @@ map.on("move", () => updateScatter(stations));
 // ------------ LOAD DATA -----------------
 
 map.on("load", async () => {
-  console.log("Loading data…");
 
   const stationData = await d3.json("https://dsc106.com/labs/lab07/data/bluebikes-stations.json");
   stations = stationData.data.stations.map(s => ({

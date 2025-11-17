@@ -112,3 +112,6 @@ circle {
   .legend > div:nth-child(2) { text-align: center; }
   .legend > div:last-child { text-align: right; }
   
+  circle {
+    pointer-events: auto;
+  }
